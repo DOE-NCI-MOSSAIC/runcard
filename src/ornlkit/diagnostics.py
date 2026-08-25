@@ -1,7 +1,6 @@
 """Diagnostic logging for verifying compute-job environments."""
 
 import importlib.metadata
-import logging
 import os
 import platform
 import shutil
@@ -9,10 +8,11 @@ import sys
 import time
 from collections.abc import Sequence
 
-import orjson
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
+from ornlkit._logging import get_logger
+
+log = get_logger()
 
 _CORE_PACKAGES = ("polars", "pyarrow", "datafusion", "pydantic", "orjson", "rustworkx")
 
@@ -92,32 +92,18 @@ def log_diagnostics(
     """Log environment information useful for verifying compute jobs."""
     report = collect_diagnostics(core_packages=core_packages)
 
-    logger.info("--- environment diagnostics ---")
-    logger.info("hostname: %s", report.hostname)
-    logger.info("platform: %s", report.platform)
-    logger.info("python: %s (%s)", report.python_version, report.python_path)
-    logger.info("cwd: %s", report.cwd)
-    logger.info("user: %s", report.user)
-
-    # SLURM variables (only logged when present)
-    slurm_active = False
-    for var, field in zip(_SLURM_VARS, SlurmInfo.model_fields, strict=True):
-        value = getattr(report.slurm, field)
-        if value is not None:
-            slurm_active = True
-            logger.info("%s: %s", var, value)
-    if not slurm_active:
-        logger.info("SLURM: not running inside a job")
-
-    # uv availability
-    logger.info("uv: %s", report.uv_path or "not found on PATH")
-
-    # Core dependency versions
-    for pkg, ver in report.packages.items():
-        logger.info("%s: %s", pkg, ver)
-
-    logger.info("diagnostics completed in %.3f s", report.elapsed_seconds)
-    logger.info("diagnostics_json: %s", orjson.dumps(report.model_dump()).decode())
-    logger.info("--- end diagnostics ---")
+    log.info(
+        "environment_diagnostics",
+        hostname=report.hostname,
+        platform=report.platform,
+        python_version=report.python_version,
+        python_path=report.python_path,
+        cwd=report.cwd,
+        user=report.user,
+        slurm=report.slurm.model_dump(exclude_none=True),
+        uv_path=report.uv_path,
+        packages=report.packages,
+        elapsed_seconds=report.elapsed_seconds,
+    )
 
     return report

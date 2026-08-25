@@ -1,7 +1,6 @@
 """Tests for the ornlkit_main decorator and Hydra config integration."""
 
 import argparse
-import logging
 import sys
 
 import pytest
@@ -73,13 +72,12 @@ class TestOrnlkitMainDecorator:
 
         # Hydra manages its own logging handlers (stdout), so check captured output
         out = capsys.readouterr().out
-        assert "environment diagnostics" in out
-        assert "pydantic:" in out
+        assert "environment_diagnostics" in out
         assert len(captured_greetings) == 1
         assert captured_greetings[0] == "Hello from ornlkit"
 
     @pytest.mark.usefixtures("_patch_argparse")
-    def test_cli_override(self, caplog: logging.LogRecord, monkeypatch) -> None:
+    def test_cli_override(self, capsys, monkeypatch) -> None:
         """Verify that Hydra CLI overrides work through the decorator."""
         captured = []
 
@@ -92,8 +90,6 @@ class TestOrnlkitMainDecorator:
             captured.append(cfg.app.greeting)
 
         monkeypatch.setattr("sys.argv", ["experiment", "app.greeting=Howdy"])
-
-        with caplog.at_level(logging.INFO):
-            experiment()
+        experiment()
 
         assert captured[0] == "Howdy"
