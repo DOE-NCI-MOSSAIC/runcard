@@ -89,21 +89,25 @@ def collect_diagnostics(
 def log_diagnostics(
     core_packages: Sequence[str] = _CORE_PACKAGES,
 ) -> DiagnosticsReport:
-    """Log environment information useful for verifying compute jobs."""
+    """Log environment information useful for verifying compute jobs.
+
+    Emits three flat events -- ``environment``, ``slurm`` and ``packages`` --
+    so each fits on a console line.  The structured report is returned.
+    """
     report = collect_diagnostics(core_packages=core_packages)
 
+    # platform and uv_path stay on the report but are left off the log line:
+    # they are long and rarely what a researcher needs to see at a glance.
     log.info(
-        "environment_diagnostics",
+        "environment",
         hostname=report.hostname,
-        platform=report.platform,
+        user=report.user,
         python_version=report.python_version,
         python_path=report.python_path,
         cwd=report.cwd,
-        user=report.user,
-        slurm=report.slurm.model_dump(exclude_none=True),
-        uv_path=report.uv_path,
-        packages=report.packages,
-        elapsed_seconds=report.elapsed_seconds,
     )
+    slurm = report.slurm.model_dump(exclude_none=True)
+    log.info("slurm", active=bool(slurm), **slurm)
+    log.info("packages", **report.packages)
 
     return report
