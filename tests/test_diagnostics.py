@@ -48,27 +48,31 @@ class TestCollectDiagnostics:
 
 
 class TestLogDiagnostics:
-    def test_structured_event(self) -> None:
+    def test_emits_three_flat_events(self) -> None:
         with capture_logs() as cap:
             log_diagnostics()
-        assert len(cap) == 1
-        assert cap[0]["event"] == "environment_diagnostics"
-        assert "hostname" in cap[0]
-        assert "python_version" in cap[0]
-        assert "packages" in cap[0]
-        assert "polars" in cap[0]["packages"]
+        assert [e["event"] for e in cap] == ["environment", "slurm", "packages"]
+        env, _, packages = cap
+        assert "hostname" in env
+        assert "python_version" in env
+        assert "polars" in packages
+        # No nested dicts: every value fits on one console line.
+        for ev in cap:
+            assert not any(isinstance(v, dict) for v in ev.values())
 
-    def test_slurm_context_excluded_when_inactive(self) -> None:
+    def test_slurm_inactive_outside_job(self) -> None:
         with capture_logs() as cap:
             log_diagnostics()
-        slurm = cap[0]["slurm"]
-        assert slurm == {}
+        slurm = cap[1]
+        assert slurm["active"] is False
+        assert "job_id" not in slurm
 
-    def test_slurm_context_included_when_active(self, monkeypatch) -> None:
+    def test_slurm_active_when_env_set(self, monkeypatch) -> None:
         monkeypatch.setenv("SLURM_JOB_ID", "99999")
         with capture_logs() as cap:
             log_diagnostics()
-        slurm = cap[0]["slurm"]
+        slurm = cap[1]
+        assert slurm["active"] is True
         assert slurm["job_id"] == "99999"
 
     def test_returns_report(self) -> None:
@@ -86,7 +90,9 @@ class TestCustomCorePackages:
         with capture_logs() as cap:
             report = log_diagnostics(core_packages=("pydantic",))
         assert set(report.packages.keys()) == {"pydantic"}
-        assert cap[0]["packages"] == {"pydantic": report.packages["pydantic"]}
+        packages = cap[2]
+        assert packages["event"] == "packages"
+        assert packages["pydantic"] == report.packages["pydantic"]
 
     def test_empty_core_packages(self) -> None:
         report = collect_diagnostics(core_packages=())

@@ -1,6 +1,7 @@
 """Tests for the ornlkit_main decorator and Hydra config integration."""
 
 import argparse
+import json
 import sys
 
 import pytest
@@ -72,9 +73,37 @@ class TestOrnlkitMainDecorator:
 
         # Hydra manages its own logging handlers (stdout), so check captured output
         out = capsys.readouterr().out
-        assert "environment_diagnostics" in out
+        assert "environment" in out
+        assert "packages" in out
+        # Run context (hostname, SLURM vars) is hidden from console lines.
+        assert "hostname=" not in out.split("environment", 1)[1].split("\n", 1)[1]
+        assert "[root]" not in out
         assert len(captured_greetings) == 1
         assert captured_greetings[0] == "Hello from ornlkit"
+
+    @pytest.mark.usefixtures("_patch_argparse")
+    def test_exception_traceback_written_to_json_log(self, tmp_path, monkeypatch) -> None:
+        """log.exception() must land in the JSON file with the traceback text."""
+        from ornlkit._logging import get_logger
+
+        log = get_logger("exc_test")
+
+        @ornlkit_main(config_path=_CONF_DIR, config_name="config", core_packages=())
+        def experiment(cfg):
+            try:
+                raise ValueError("boom")
+            except ValueError:
+                log.exception("failed_step", step=1)
+
+        monkeypatch.setattr("sys.argv", ["experiment", f"hydra.run.dir={tmp_path}"])
+        experiment()
+
+        (log_file,) = tmp_path.glob("*.log")
+        [line] = [ln for ln in log_file.read_text().splitlines() if "failed_step" in ln]
+        event = json.loads(line)
+        assert event["step"] == 1
+        assert "ValueError: boom" in event["exception"]
+        assert "exc_info" not in event
 
     @pytest.mark.usefixtures("_patch_argparse")
     def test_cli_override(self, capsys, monkeypatch) -> None:
