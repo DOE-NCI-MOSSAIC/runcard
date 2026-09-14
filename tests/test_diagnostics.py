@@ -1,8 +1,6 @@
 """Tests for the diagnostics module."""
 
-import logging
-
-import orjson
+from structlog.testing import capture_logs
 
 from ornlkit.diagnostics import (
     DiagnosticsReport,
@@ -50,52 +48,37 @@ class TestCollectDiagnostics:
 
 
 class TestLogDiagnostics:
-    def test_human_readable_output(self, caplog: logging.LogRecord) -> None:
-        with caplog.at_level(logging.INFO):
+    def test_emits_three_flat_events(self) -> None:
+        with capture_logs() as cap:
             log_diagnostics()
+        assert [e["event"] for e in cap] == ["environment", "slurm", "packages"]
+        env, _, packages = cap
+        assert "hostname" in env
+        assert "python_version" in env
+        assert "polars" in packages
+        # No nested dicts: every value fits on one console line.
+        for ev in cap:
+            assert not any(isinstance(v, dict) for v in ev.values())
 
-        assert "environment diagnostics" in caplog.text
-        assert "end diagnostics" in caplog.text
-        assert "hostname:" in caplog.text
-        assert "python:" in caplog.text
-        assert "polars:" in caplog.text
-
-    def test_slurm_inactive_message(self, caplog: logging.LogRecord) -> None:
-        with caplog.at_level(logging.INFO):
+    def test_slurm_inactive_outside_job(self) -> None:
+        with capture_logs() as cap:
             log_diagnostics()
+        slurm = cap[1]
+        assert slurm["active"] is False
+        assert "job_id" not in slurm
 
-        assert "SLURM: not running inside a job" in caplog.text
-
-    def test_slurm_active_message(self, caplog: logging.LogRecord, monkeypatch: object) -> None:
+    def test_slurm_active_when_env_set(self, monkeypatch) -> None:
         monkeypatch.setenv("SLURM_JOB_ID", "99999")
-        with caplog.at_level(logging.INFO):
+        with capture_logs() as cap:
             log_diagnostics()
-
-        assert "SLURM_JOB_ID: 99999" in caplog.text
-        assert "not running inside a job" not in caplog.text
+        slurm = cap[1]
+        assert slurm["active"] is True
+        assert slurm["job_id"] == "99999"
 
     def test_returns_report(self) -> None:
-        report = log_diagnostics()
-        assert isinstance(report, DiagnosticsReport)
-
-    def test_json_roundtrip(self, caplog: logging.LogRecord) -> None:
-        with caplog.at_level(logging.INFO):
+        with capture_logs():
             report = log_diagnostics()
-
-        # Find the JSON line in log output
-        json_line = None
-        for record in caplog.records:
-            if "diagnostics_json:" in record.message:
-                json_line = record.message
-                break
-        assert json_line is not None, "diagnostics_json line not found in log output"
-
-        # Parse JSON payload back into a DiagnosticsReport
-        json_str = json_line.split("diagnostics_json: ", 1)[1]
-        restored = DiagnosticsReport.model_validate(orjson.loads(json_str))
-        assert restored.hostname == report.hostname
-        assert restored.packages == report.packages
-        assert restored.slurm == report.slurm
+        assert isinstance(report, DiagnosticsReport)
 
 
 class TestCustomCorePackages:
@@ -103,11 +86,13 @@ class TestCustomCorePackages:
         report = collect_diagnostics(core_packages=("pydantic", "orjson"))
         assert set(report.packages.keys()) == {"pydantic", "orjson"}
 
-    def test_custom_core_packages_log(self, caplog: logging.LogRecord) -> None:
-        with caplog.at_level(logging.INFO):
+    def test_custom_core_packages_log(self) -> None:
+        with capture_logs() as cap:
             report = log_diagnostics(core_packages=("pydantic",))
         assert set(report.packages.keys()) == {"pydantic"}
-        assert "pydantic:" in caplog.text
+        packages = cap[2]
+        assert packages["event"] == "packages"
+        assert packages["pydantic"] == report.packages["pydantic"]
 
     def test_empty_core_packages(self) -> None:
         report = collect_diagnostics(core_packages=())

@@ -4,12 +4,15 @@ import argparse
 import functools
 import inspect
 import os
+import platform as _platform
 import sys
 from collections.abc import Sequence
 
 import hydra
+import structlog.contextvars
 from omegaconf import DictConfig
 
+from ornlkit._logging import bind_slurm_context, configure_handlers
 from ornlkit.diagnostics import _CORE_PACKAGES, log_diagnostics
 
 # Hydra 1.3 passes a LazyCompletionHelp object (which doesn't implement
@@ -40,6 +43,10 @@ def ornlkit_main(
         @hydra.main(version_base=None, config_path=abs_config_path, config_name=config_name)
         @functools.wraps(func)
         def wrapper(cfg: DictConfig):
+            structlog.contextvars.clear_contextvars()
+            configure_handlers()
+            bind_slurm_context()
+            structlog.contextvars.bind_contextvars(hostname=_platform.node())
             log_diagnostics(core_packages=core_packages)
             return func(cfg)
 
