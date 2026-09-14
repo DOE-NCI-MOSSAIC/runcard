@@ -1,0 +1,16 @@
+# Every value here can be overridden on the command line, e.g.
+#   uv run python examples/quickstart/train.py model.lr=0.9 model.epochs=10
+data:
+  n_rows: 10000
+  seed: 0
+  true_slope: 2.5
+  noise: 0.3
+
+model:
+  lr: 0.5
+  epochs: 5
+
+demo:
+  # Set to an epoch number (e.g. demo.fail_at_epoch=2) to raise an error
+  # mid-run and see how log.exception() records it.
+  fail_at_epoch: null

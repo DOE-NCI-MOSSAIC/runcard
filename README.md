@@ -18,6 +18,8 @@ ornlkit/
 │   └── frontier.def           # Apptainer definition for Frontier
 ├── jobs/
 │   └── hello.sbatch           # Frontier smoke-test batch script
+├── examples/
+│   └── quickstart/            # Minimal experiment to copy from (see its README)
 ├── src/ornlkit/               # Python package source
 └── tests/                     # Test suite
 ```

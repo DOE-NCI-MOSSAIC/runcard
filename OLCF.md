@@ -39,8 +39,8 @@ uv run python3 your_script.py
 ### In a batch script
 
 Run `just sync` on the login node first to create `.venv-frontier/` with
-miniforge3 Python. Then use the venv directly in batch scripts — no uv needed
-on compute nodes:
+miniforge3 Python. Then use the venv directly in batch scripts — no uv needed on
+compute nodes:
 
 ```bash
 #!/bin/bash
