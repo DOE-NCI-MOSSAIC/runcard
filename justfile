@@ -29,6 +29,14 @@ typecheck:
 # Run lint, typecheck, and tests
 check: lint typecheck test
 
+# Build the documentation site into site/ (fails on warnings)
+docs:
+    uv run zensical build --strict
+
+# Serve the documentation site with live reload
+docs-serve:
+    uv run zensical serve
+
 # Local run with unified output dir
 run *hydra_args:
     #!/usr/bin/env bash

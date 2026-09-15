@@ -1,0 +1,86 @@
+[project]
+site_name = "runcard"
+site_description = "Hydra configuration and structured logging for HPC experiments"
+site_url = "https://adanoelle.github.io/runcard/"
+repo_url = "https://github.com/adanoelle/runcard"
+repo_name = "adanoelle/runcard"
+copyright = "runcard contributors"
+nav = [
+  { "Home" = "index.md" },
+  { "Tutorial" = "tutorial.md" },
+  { "How-to" = [
+    { "Override parameters and sweep" = "how-to/overrides-and-sweeps.md" },
+    { "Read logs back" = "how-to/reading-logs.md" },
+    { "Run on Frontier" = "how-to/frontier.md" },
+  ] },
+  { "Explanation" = [
+    { "Why a run card" = "explanation/why-run-cards.md" },
+    { "Logging: what to write and where it goes" = "explanation/logging.md" },
+  ] },
+  { "Reference" = [
+    { "runcard" = "reference/api.md" },
+    { "runcard logs (CLI)" = "reference/cli.md" },
+    { "runcard.diagnostics" = "reference/diagnostics.md" },
+    { "Logging internals" = "reference/logging-internals.md" },
+  ] },
+  { "Talk" = [
+    { "Speaker notes" = "presentation-notes.md" },
+  ] },
+]
+
+[project.theme]
+language = "en"
+features = [
+  "content.code.copy",
+  "content.code.annotate",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.top",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "teal"
+accent = "deep orange"
+toggle.icon = "material/weather-sunny"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "teal"
+accent = "deep orange"
+toggle.icon = "material/weather-night"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.highlight]
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "google"
+docstring_section_style = "table"
+filters = "public"
+members_order = "source"
+merge_init_into_class = true
+separate_signature = true
+show_root_heading = true
+show_signature_annotations = true
+show_source = true

@@ -1,4 +1,15 @@
-"""``runcard logs`` subcommand — inspect structured log files from Hydra runs."""
+"""The ``runcard logs`` subcommand: inspect structured logs from Hydra runs.
+
+Three commands, all operating on a run directory (identified by its
+``.hydra/`` subdirectory) or directly on a ``.log`` file:
+
+* ``list``: every run under ``outputs/`` and ``runs/``, with its overrides.
+* ``show``: events from one run, filtered by ``--event`` or ``--level``.
+* ``tail``: the last *N* events from one run.
+
+Output defaults to the console format; ``--json`` and ``--compact`` emit JSON
+for ``jq`` or Polars.
+"""
 
 from __future__ import annotations
 
@@ -152,7 +163,12 @@ def _add_format_args(parser: argparse.ArgumentParser) -> None:
 
 
 def logs_main(argv: list[str] | None = None) -> None:
-    """Entry point for ``runcard logs``."""
+    """Entry point for ``runcard logs``.
+
+    Args:
+        argv: Arguments after ``logs``; ``None`` reads ``sys.argv[1:]``.
+            Called by ``runcard.__main__`` with ``sys.argv[2:]``.
+    """
     parser = argparse.ArgumentParser(prog="runcard logs", description="Inspect structured logs")
     sub = parser.add_subparsers(dest="command")
 

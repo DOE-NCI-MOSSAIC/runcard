@@ -19,6 +19,10 @@ logs/
 outputs/
 multirun/
 
+# Docs build
+site/
+.cache/
+
 # Editor
 .direnv/
 .envrc.local
