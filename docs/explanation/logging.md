@@ -47,7 +47,7 @@ except Exception:
 ```python
 log = get_logger(__name__)
 run_log = log.bind(trial=trial_id, seed=seed)
-run_log.info("start")          # trial=... seed=... appear automatically
+run_log.info("start")  # trial=... seed=... appear automatically
 run_log.info("epoch_done", epoch=0)
 ```
 
