@@ -1,7 +1,7 @@
 # runcard
 
 Hydra configuration and structured logging for research experiments on ORNL
-HPC systems. A *run card*, in the event-generator sense, is the one file that
+systems. A *run card*, in the event-generator sense, is the one file that
 fully specifies a run. runcard makes your `conf/config.yaml` that file: every
 value can be overridden from the command line, every run gets its own
 directory holding the exact config and a JSON event log, and every run
