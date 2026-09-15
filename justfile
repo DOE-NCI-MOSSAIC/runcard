@@ -44,7 +44,7 @@ run *hydra_args:
     timestamp=$(date +%Y%m%d-%H%M%S)
     run_dir="runs/{{ job_name }}/local-${timestamp}"
     mkdir -p "${run_dir}"
-    uv run runcard hydra.run.dir="${run_dir}" {{ hydra_args }}
+    uv run runcard check hydra.run.dir="${run_dir}" {{ hydra_args }}
 
 # Run the quickstart example
 quickstart *hydra_args:

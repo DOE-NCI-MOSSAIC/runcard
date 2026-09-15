@@ -5,11 +5,10 @@ HPC systems. One decorator turns a script's constants into a YAML file with
 command-line overrides, gives every run its own directory, and records what
 happened as readable console lines and a JSON event log.
 
-## The whole API
+## Example
 
 ```python
 from omegaconf import DictConfig
-
 from runcard import get_logger, experiment
 
 log = get_logger(__name__)
@@ -40,7 +39,7 @@ uv run runcard logs list                      # find runs afterwards
 uv run runcard logs show outputs/<date>/<time> --event epoch_done
 ```
 
-Every run leaves one directory behind:
+Each run creates one directory, tracking provenance:
 
 ```
 outputs/<date>/<time>/
@@ -60,6 +59,12 @@ Add it to your own uv project:
 
 ```bash
 uv add "runcard @ git+https://github.com/adanoelle/runcard.git"
+```
+
+Tab completion for bash, zsh, or fish:
+
+```bash
+uv run runcard --install-completion
 ```
 
 Then copy [examples/quickstart](examples/quickstart) next to your code and

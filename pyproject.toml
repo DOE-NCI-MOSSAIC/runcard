@@ -1,34 +1,29 @@
 [project]
 name = "runcard"
 version = "0.1.0"
-description = "Hydra configuration and structured logging for ORNL HPC experiments"
+description = "Hydra configuration and structured logging for ORNL experiments"
 requires-python = ">=3.10"
 dependencies = [
     # DataFrames & columnar data (Rust-backed)
     "polars",
     "pyarrow",
-
     # SQL over Arrow data (Rust-backed)
     "datafusion",
-
     # Data validation (Rust core in v2)
     "pydantic>=2",
-
     # Fast JSON (Rust-backed)
     "orjson",
-
     # Graph algorithms (Rust-backed, from IBM/Qiskit)
     "rustworkx",
-
     # Config management (YAML + CLI overrides)
     "hydra-core>=1.3",
-
     # Structured logging
     "structlog>=24.1",
+    "typer>=0.27.2",
 ]
 
 [project.scripts]
-runcard = "runcard.__main__:main"
+runcard = "runcard.cli.app:main"
 
 [dependency-groups]
 dev = [

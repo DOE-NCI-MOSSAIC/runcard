@@ -126,7 +126,7 @@ def experiment(
         # *this* file.  Passing an absolute path makes Hydra skip its own
         # stack-based resolution entirely.
         func_dir = os.path.dirname(os.path.abspath(inspect.getfile(func)))
-        abs_config_path = os.path.join(func_dir, config_path)
+        abs_config_path = os.path.normpath(os.path.join(func_dir, config_path))
 
         @hydra.main(version_base=None, config_path=abs_config_path, config_name=config_name)
         @functools.wraps(func)

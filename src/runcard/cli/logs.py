@@ -8,22 +8,34 @@ Three commands, all operating on a run directory (identified by its
 * ``tail``: the last *N* events from one run.
 
 Output defaults to the console format; ``--json`` and ``--compact`` emit JSON
-for ``jq`` or Polars.
+for ``jq`` or Polars. On a terminal, ``list`` renders a table and JSON is
+syntax-highlighted; when piped, output is plain text.
+
+Tab completion (``runcard --install-completion``) offers run directories for
+``RUN``, the event names found in that run for ``--event``, and log levels
+for ``--level``.
 """
 
 from __future__ import annotations
 
-import argparse
+import glob
 import json
 import os
 import sys
 from pathlib import Path
 
 import orjson
+import typer
+from rich.console import Console
+from rich.table import Table
 
 from runcard._logging import RUN_CONTEXT_KEYS, render_console_line
 
 _DEFAULT_ROOTS = ("outputs", "runs")
+_COMPLETION_ROOTS = (*_DEFAULT_ROOTS, "multirun")
+_LEVELS = ("debug", "info", "warning", "error", "critical")
+
+logs_app = typer.Typer(help="Inspect structured logs from runs.", no_args_is_help=True)
 
 
 def _find_run_dirs(roots: list[str] | None = None) -> list[Path]:
@@ -39,6 +51,14 @@ def _find_run_dirs(roots: list[str] | None = None) -> list[Path]:
                 dirnames.clear()  # don't descend further
     dirs.sort()
     return dirs
+
+
+def _overrides(run: Path) -> str:
+    """Return the overrides recorded for a run, or ``""``."""
+    overrides_file = run / ".hydra" / "overrides.yaml"
+    if not overrides_file.exists():
+        return ""
+    return " ".join(overrides_file.read_text().split())
 
 
 def _read_jsonl_events(path: Path) -> list[dict]:
@@ -97,101 +117,167 @@ def _print_events(events: list[dict], *, fmt: str) -> None:
             print(f"\x1b[2m{line}\x1b[0m" if colors else line)
         for ev in events:
             print(_format_human(ev, colors=colors))
+    elif fmt == "json" and sys.stdout.isatty():
+        console = Console()
+        for ev in events:
+            console.print_json(json.dumps(ev, default=str))
     else:
         for ev in events:
             print(_format_event(ev, compact=fmt == "compact"))
 
 
-def _output_format(args: argparse.Namespace) -> str:
-    if args.compact:
+# --- completion -------------------------------------------------------------
+
+
+def _run_candidates(incomplete: str) -> list[str]:
+    """Run directories under the usual roots whose path starts with *incomplete*."""
+    return [
+        str(d) for d in _find_run_dirs(list(_COMPLETION_ROOTS)) if str(d).startswith(incomplete)
+    ]
+
+
+def _event_candidates(run: str | None, incomplete: str) -> list[str]:
+    """Distinct event names in *run*, in first-seen order, starting with *incomplete*."""
+    if not run:
+        return []
+    seen: dict[str, None] = {}
+    for lf in _find_log_files(Path(run)):
+        try:
+            events = _read_jsonl_events(lf)
+        except OSError:
+            continue
+        for ev in events:
+            name = ev.get("event")
+            if isinstance(name, str) and name.startswith(incomplete):
+                seen.setdefault(name, None)
+    return list(seen)
+
+
+def _path_fallback(incomplete: str, *, dirs_only: bool = False) -> list[str]:
+    """Directories (and ``.log`` files) matching *incomplete*, for paths outside the roots."""
+    matches = glob.glob(incomplete + "*")
+    return sorted(p for p in matches if os.path.isdir(p) or (not dirs_only and p.endswith(".log")))
+
+
+def _complete_run(ctx: typer.Context, args: list[str], incomplete: str) -> list[str]:
+    return _run_candidates(incomplete) or _path_fallback(incomplete)
+
+
+def _complete_event(ctx: typer.Context, args: list[str], incomplete: str) -> list[str]:
+    # While completing `--event <TAB>` the parser has not bound RUN yet; it sits
+    # in ctx.args as a leftover positional.
+    run = ctx.params.get("run") or next((a for a in ctx.args if not a.startswith("-")), None)
+    return _event_candidates(run, incomplete)
+
+
+def _complete_level(ctx: typer.Context, args: list[str], incomplete: str) -> list[str]:
+    return [lv for lv in _LEVELS if lv.startswith(incomplete)]
+
+
+def _complete_dir(ctx: typer.Context, args: list[str], incomplete: str) -> list[str]:
+    return _path_fallback(incomplete, dirs_only=True)
+
+
+# --- commands ---------------------------------------------------------------
+
+_RUN_ARG = typer.Argument(
+    ...,
+    help="Run directory (one with a .hydra/ subdirectory) or a .log file.",
+    autocompletion=_complete_run,
+)
+_JSON_OPT = typer.Option(False, "--json", help="Pretty-printed JSON, one event per block.")
+_COMPACT_OPT = typer.Option(False, "--compact", "-c", help="Compact JSON, one event per line.")
+
+
+def _output_format(json_: bool, compact: bool) -> str:
+    if json_ and compact:
+        raise typer.BadParameter("--json and --compact are mutually exclusive")
+    if compact:
         return "compact"
-    if args.json:
+    if json_:
         return "json"
     return "human"
 
 
-def _cmd_list(args: argparse.Namespace) -> None:
-    dirs = _find_run_dirs(args.roots)
-    if not dirs:
-        print("No Hydra run directories found.")
-        return
-    for d in dirs:
-        log_count = len(list(d.glob("*.log")))
-        # Read overrides if available
-        overrides_file = d / ".hydra" / "overrides.yaml"
-        overrides = ""
-        if overrides_file.exists():
-            overrides = " " + overrides_file.read_text().strip()
-        print(f"{d}  ({log_count} log file(s)){overrides}")
-
-
-def _cmd_show(args: argparse.Namespace) -> None:
-    run = Path(args.run)
-    log_files = _find_log_files(run)
+def _load_events(run: str) -> list[dict]:
+    """Read every event from a run directory or log file, or exit 1 if there are none."""
+    log_files = _find_log_files(Path(run))
     if not log_files:
-        print(f"No log files found in {run}", file=sys.stderr)
-        sys.exit(1)
+        typer.echo(f"No log files found in {run}", err=True)
+        raise typer.Exit(code=1)
     events: list[dict] = []
     for lf in log_files:
-        for ev in _read_jsonl_events(lf):
-            if args.event and ev.get("event") != args.event:
-                continue
-            if args.level and ev.get("level", "").upper() != args.level.upper():
-                continue
-            events.append(ev)
-    _print_events(events, fmt=_output_format(args))
+        events.extend(_read_jsonl_events(lf))
+    return events
 
 
-def _cmd_tail(args: argparse.Namespace) -> None:
-    run = Path(args.run)
-    log_files = _find_log_files(run)
-    if not log_files:
-        print(f"No log files found in {run}", file=sys.stderr)
-        sys.exit(1)
-    all_events: list[dict] = []
-    for lf in log_files:
-        all_events.extend(_read_jsonl_events(lf))
-    _print_events(all_events[-args.n :], fmt=_output_format(args))
+@logs_app.command("list")
+def list_runs(
+    roots: list[str] | None = typer.Option(
+        None,
+        "--roots",
+        help="Root directories to search (default: outputs, runs).",
+        autocompletion=_complete_dir,
+    ),
+) -> None:
+    """List run directories with the overrides that produced them."""
+    dirs = _find_run_dirs(roots)
+    if not dirs:
+        typer.echo("No run directories found.")
+        return
+    if not sys.stdout.isatty():
+        for d in dirs:
+            log_count = len(list(d.glob("*.log")))
+            overrides = _overrides(d)
+            typer.echo(f"{d}  ({log_count} log file(s)){' ' + overrides if overrides else ''}")
+        return
+    table = Table(box=None, pad_edge=False, header_style="bold")
+    table.add_column("Run", style="cyan", no_wrap=True)
+    table.add_column("Logs", justify="right", style="dim")
+    table.add_column("Overrides", style="yellow")
+    for d in dirs:
+        table.add_row(str(d), str(len(list(d.glob("*.log")))), _overrides(d))
+    Console().print(table)
 
 
-def _add_format_args(parser: argparse.ArgumentParser) -> None:
-    fmt = parser.add_mutually_exclusive_group()
-    fmt.add_argument("--json", action="store_true", help="Pretty-printed JSON, one event per block")
-    fmt.add_argument(
-        "-c", "--compact", action="store_true", help="Compact JSON, one event per line"
-    )
+@logs_app.command("show")
+def show(
+    run: str = _RUN_ARG,
+    event: str | None = typer.Option(
+        None, "--event", help="Only events with this name.", autocompletion=_complete_event
+    ),
+    level: str | None = typer.Option(
+        None, "--level", help="Only events at this level.", autocompletion=_complete_level
+    ),
+    json_: bool = _JSON_OPT,
+    compact: bool = _COMPACT_OPT,
+) -> None:
+    """Show the events from a run, optionally filtered by event name or level."""
+    events = [
+        ev
+        for ev in _load_events(run)
+        if (event is None or ev.get("event") == event)
+        and (level is None or ev.get("level", "").upper() == level.upper())
+    ]
+    _print_events(events, fmt=_output_format(json_, compact))
+
+
+@logs_app.command("tail")
+def tail(
+    run: str = _RUN_ARG,
+    n: int = typer.Option(10, "-n", "--lines", min=1, help="Number of events."),
+    json_: bool = _JSON_OPT,
+    compact: bool = _COMPACT_OPT,
+) -> None:
+    """Show the last N events from a run."""
+    events = _load_events(run)
+    _print_events(events[-n:], fmt=_output_format(json_, compact))
 
 
 def logs_main(argv: list[str] | None = None) -> None:
-    """Entry point for ``runcard logs``.
+    """Run ``runcard logs`` standalone.
 
     Args:
         argv: Arguments after ``logs``; ``None`` reads ``sys.argv[1:]``.
-            Called by ``runcard.__main__`` with ``sys.argv[2:]``.
     """
-    parser = argparse.ArgumentParser(prog="runcard logs", description="Inspect structured logs")
-    sub = parser.add_subparsers(dest="command")
-
-    # list
-    p_list = sub.add_parser("list", help="List Hydra run directories")
-    p_list.add_argument("--roots", nargs="+", help="Root directories to search")
-
-    # show
-    p_show = sub.add_parser("show", help="Show log events from a run")
-    p_show.add_argument("run", help="Run directory or log file path")
-    p_show.add_argument("--event", help="Filter by event name")
-    p_show.add_argument("--level", help="Filter by log level")
-    _add_format_args(p_show)
-
-    # tail
-    p_tail = sub.add_parser("tail", help="Show last N events from a run")
-    p_tail.add_argument("run", help="Run directory or log file path")
-    p_tail.add_argument("-n", type=int, default=10, help="Number of events (default: 10)")
-    _add_format_args(p_tail)
-
-    args = parser.parse_args(argv)
-    if args.command is None:
-        parser.print_help()
-        sys.exit(1)
-
-    {"list": _cmd_list, "show": _cmd_show, "tail": _cmd_tail}[args.command](args)
+    logs_app(args=argv, prog_name="runcard logs")

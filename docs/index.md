@@ -62,6 +62,12 @@ Add it to your own uv project:
 uv add "runcard @ git+https://github.com/adanoelle/runcard.git"
 ```
 
+Tab completion for bash, zsh, or fish:
+
+```bash
+uv run runcard --install-completion
+```
+
 Then follow the [tutorial](tutorial.md): ten commands, each introducing one
 idea, ending with a Polars one-liner that pivots a sweep's loss curves into a
 table.
