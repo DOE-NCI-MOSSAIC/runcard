@@ -57,9 +57,8 @@ The Entire API
 
 <!-- column: 0 -->
 
-```python {1-2|4|6-8|9}
-from runcard import get_logger
-from runcard import experiment
+```python {1|3|5-7|8}
+from runcard import experiment, get_logger
 
 log = get_logger("train")
 
@@ -228,9 +227,20 @@ uv run runcard logs list
 ```
 
 ```text
-outputs/2026-09-13/21-15-47  (1 log file(s)) - model.lr=4.0
-outputs/2026-09-13/21-15-48  (1 log file(s)) - demo.fail_at_epoch=1
-multirun/2026-09-13/21-15-48/0  (1 log file(s)) - model.lr=0.1
+Run                          Status             Duration  Overrides
+outputs/2026-09-13/21-15-47  finished               0.1s  model.lr=4.0
+outputs/2026-09-13/21-15-48  finished, 1 error      0.1s  demo.fail_at_epoch=1
+outputs/2026-09-13/21-15-49  failed                 0.0s  data.n_rows=0
+```
+
+<span class="dim">Status comes from events the decorator writes, not from your script.</span>
+
+<!-- pause -->
+
+## One screen for a run: how it ended, where, and how the numbers moved
+
+```bash
+runcard logs summary outputs/2026-09-13/21-15-47
 ```
 
 <!-- pause -->
