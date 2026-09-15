@@ -1,4 +1,4 @@
-# ornlkit
+# runcard
 
 Hydra configuration and structured logging for research experiments on ORNL
 HPC systems. One decorator turns a script's constants into a YAML file with
@@ -10,12 +10,12 @@ happened as readable console lines and a JSON event log.
 ```python
 from omegaconf import DictConfig
 
-from ornlkit import get_logger, ornlkit_main
+from runcard import get_logger, experiment
 
 log = get_logger(__name__)
 
 
-@ornlkit_main(config_path="conf", config_name="config")
+@experiment("conf/config.yaml")
 def main(cfg: DictConfig) -> None:
     log.info("start", lr=cfg.model.lr, epochs=cfg.model.epochs)
     ...
@@ -36,8 +36,8 @@ model:
 uv run python train.py                        # defaults
 uv run python train.py model.lr=0.01          # override any value
 uv run python train.py -m model.lr=0.1,0.01   # sweep
-uv run ornlkit logs list                      # find runs afterwards
-uv run ornlkit logs show outputs/<date>/<time> --event epoch_done
+uv run runcard logs list                      # find runs afterwards
+uv run runcard logs show outputs/<date>/<time> --event epoch_done
 ```
 
 Every run leaves one directory behind:
@@ -59,7 +59,7 @@ a laptop leaves evidence.
 Add it to your own uv project:
 
 ```bash
-uv add "ornlkit @ git+https://github.com/adanoelle/ornlkit.git"
+uv add "runcard @ git+https://github.com/adanoelle/runcard.git"
 ```
 
 Then copy [examples/quickstart](examples/quickstart) next to your code and
@@ -75,7 +75,7 @@ Polars one-liner that pivots a sweep's loss curves into a table.
   directory. Same call, both outputs.
 - **Provenance for free.** Config, overrides, package versions, hostname, and
   SLURM job id are stored with every run.
-- **`ornlkit logs`.** `list` shows every run with the overrides that produced
+- **`runcard logs`.** `list` shows every run with the overrides that produced
   it; `show` and `tail` read a run back in the console format, filtered by
   event or level, or as JSON for `jq` and Polars.
 
@@ -107,7 +107,7 @@ mkdir -p "$run_dir"
 
 Environment setup, the `.venv-frontier` sync recipe, interactive submission,
 and the Apptainer container live in the companion repository
-[ornlkit-frontier](https://github.com/adanoelle/ornlkit-frontier).
+[runcard-frontier](https://github.com/adanoelle/runcard-frontier).
 
 ## Development
 
@@ -115,7 +115,7 @@ and the Apptainer container live in the companion repository
 uv sync
 just check          # lint + typecheck + test
 just quickstart     # run the example
-just run            # local smoke test → runs/ornlkit/local-*/
+just run            # local smoke test → runs/runcard/local-*/
 ```
 
 A Nix dev shell with Python, uv, and just is provided (`nix develop`); it is
@@ -124,12 +124,12 @@ optional.
 ## Layout
 
 ```
-ornlkit/
-├── src/ornlkit/
-│   ├── experiment.py      # @ornlkit_main
+runcard/
+├── src/runcard/
+│   ├── _experiment.py     # @experiment
 │   ├── _logging.py        # structlog configuration, console and JSON renderers
 │   ├── diagnostics.py     # environment / SLURM / package report at startup
-│   └── cli/logs.py        # ornlkit logs list | show | tail
+│   └── cli/logs.py        # runcard logs list | show | tail
 ├── examples/quickstart/   # copyable experiment with a ten-step demo
 ├── docs/                  # presentation notes
 ├── talks/                 # presenterm deck

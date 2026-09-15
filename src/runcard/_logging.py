@@ -7,7 +7,7 @@ Two renderers share one processor chain:
 * The console handler renders a compact human line: short timestamp, level,
   event, and only the fields passed explicitly on the log call.  Run
   context is hidden because it never changes within a run and is reported
-  once at startup by :func:`ornlkit.diagnostics.log_diagnostics`.
+  once at startup by :func:`runcard.diagnostics.log_diagnostics`.
 """
 
 import logging
@@ -26,7 +26,7 @@ _SLURM_VARS = (
     "SLURM_CLUSTER_NAME",
 )
 
-#: Keys that ornlkit binds as run context.  Used by ``ornlkit logs`` to hide
+#: Keys that runcard binds as run context.  Used by ``runcard logs`` to hide
 #: them from human-readable output, where the marker below is unavailable.
 RUN_CONTEXT_KEYS = frozenset(v.lower() for v in _SLURM_VARS) | {"hostname"}
 

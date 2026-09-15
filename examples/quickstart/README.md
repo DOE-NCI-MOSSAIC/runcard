@@ -2,7 +2,7 @@
 
 A tiny experiment that fits a line to noisy data with gradient descent. The
 science is deliberately trivial; the point is the shape of the script and
-what you get for free from `@ornlkit_main`.
+what you get for free from `@experiment`.
 
 ```
 examples/quickstart/
@@ -68,17 +68,17 @@ uv run python examples/quickstart/train.py -m model.lr=0.1,0.5,4.0
 produced it.
 
 ```bash
-uv run ornlkit logs list
-uv run ornlkit logs list --roots multirun
+uv run runcard logs list
+uv run runcard logs list --roots multirun
 ```
 
 **9. Read one run back.** Same format as the console. Filter by event or
 level.
 
 ```bash
-uv run ornlkit logs show outputs/<date>/<time>
-uv run ornlkit logs show outputs/<date>/<time> --event epoch_done
-uv run ornlkit logs show outputs/<date>/<time> --level error
+uv run runcard logs show outputs/<date>/<time>
+uv run runcard logs show outputs/<date>/<time> --event epoch_done
+uv run runcard logs show outputs/<date>/<time> --level error
 ```
 
 **10. Analyse a sweep with Polars.** Loss per epoch, one column per run.

@@ -1,10 +1,10 @@
-# ornlkit justfile — dev workflows
+# runcard justfile — dev workflows
 #
-# Frontier submission recipes live in the ornlkit-frontier repository:
-#   just -f ../ornlkit-frontier/justfile sync
-#   just -f ../ornlkit-frontier/justfile submit account=ABC123
+# Frontier submission recipes live in the runcard-frontier repository:
+#   just -f ../runcard-frontier/justfile sync
+#   just -f ../runcard-frontier/justfile submit account=ABC123
 
-job_name := "ornlkit"
+job_name := "runcard"
 
 # List available recipes
 default:
@@ -36,7 +36,7 @@ run *hydra_args:
     timestamp=$(date +%Y%m%d-%H%M%S)
     run_dir="runs/{{ job_name }}/local-${timestamp}"
     mkdir -p "${run_dir}"
-    uv run ornlkit hydra.run.dir="${run_dir}" {{ hydra_args }}
+    uv run runcard hydra.run.dir="${run_dir}" {{ hydra_args }}
 
 # Run the quickstart example
 quickstart *hydra_args:

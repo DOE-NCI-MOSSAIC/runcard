@@ -1,8 +1,8 @@
-"""Tests for the ornlkit logs CLI subcommand."""
+"""Tests for the runcard logs CLI subcommand."""
 
 import json
 
-from ornlkit.cli.logs import (
+from runcard.cli.logs import (
     _find_run_dirs,
     _format_event,
     _format_human,

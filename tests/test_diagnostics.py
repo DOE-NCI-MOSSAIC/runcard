@@ -2,7 +2,7 @@
 
 from structlog.testing import capture_logs
 
-from ornlkit.diagnostics import (
+from runcard.diagnostics import (
     DiagnosticsReport,
     _get_package_version,
     collect_diagnostics,

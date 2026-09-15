@@ -10,7 +10,7 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, Field
 
-from ornlkit._logging import get_logger
+from runcard._logging import get_logger
 
 log = get_logger()
 

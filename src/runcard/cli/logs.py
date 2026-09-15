@@ -1,4 +1,4 @@
-"""``ornlkit logs`` subcommand — inspect structured log files from Hydra runs."""
+"""``runcard logs`` subcommand — inspect structured log files from Hydra runs."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import orjson
 
-from ornlkit._logging import RUN_CONTEXT_KEYS, render_console_line
+from runcard._logging import RUN_CONTEXT_KEYS, render_console_line
 
 _DEFAULT_ROOTS = ("outputs", "runs")
 
@@ -152,8 +152,8 @@ def _add_format_args(parser: argparse.ArgumentParser) -> None:
 
 
 def logs_main(argv: list[str] | None = None) -> None:
-    """Entry point for ``ornlkit logs``."""
-    parser = argparse.ArgumentParser(prog="ornlkit logs", description="Inspect structured logs")
+    """Entry point for ``runcard logs``."""
+    parser = argparse.ArgumentParser(prog="runcard logs", description="Inspect structured logs")
     sub = parser.add_subparsers(dest="command")
 
     # list

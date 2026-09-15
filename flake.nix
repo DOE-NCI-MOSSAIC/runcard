@@ -1,5 +1,5 @@
 {
-  description = "ornlkit dev shell";
+  description = "runcard dev shell";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -15,7 +15,7 @@
       in
       {
         devShells.default = pkgs.mkShell {
-          name = "ornlkit";
+          name = "runcard";
 
           buildInputs = [
             python
@@ -25,7 +25,7 @@
           ];
 
           shellHook = ''
-            echo "ornlkit dev shell"
+            echo "runcard dev shell"
             echo "  python : $(python3 --version)"
             echo "  uv     : $(uv --version)"
             echo ""
