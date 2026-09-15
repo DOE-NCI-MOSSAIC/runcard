@@ -59,7 +59,7 @@ outputs/<date>/<time>/
 Add it to your own uv project:
 
 ```bash
-uv add "runcard @ git+https://github.com/adanoelle/runcard.git"
+uv add "runcard @ git+https://github.com/DOE-NCI-MOSSAIC/runcard.git"
 ```
 
 Tab completion for bash, zsh, or fish:

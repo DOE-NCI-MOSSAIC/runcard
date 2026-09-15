@@ -20,7 +20,7 @@ Two ways to use it:
 Add it to your own uv project:
 
 ```bash
-uv add "runcard @ git+https://github.com/adanoelle/runcard.git"
+uv add "runcard @ git+https://github.com/DOE-NCI-MOSSAIC/runcard.git"
 ```
 
 Then write your experiment as a function of its config:
@@ -101,7 +101,7 @@ does not need to be run from the project that made the runs, so install it
 once for your user and use it everywhere:
 
 ```bash
-uv tool install "runcard @ git+https://github.com/adanoelle/runcard.git"
+uv tool install "runcard @ git+https://github.com/DOE-NCI-MOSSAIC/runcard.git"
 runcard --install-completion      # bash, zsh, or fish; then open a new shell
 ```
 

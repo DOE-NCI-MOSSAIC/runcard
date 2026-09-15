@@ -1,9 +1,9 @@
 [project]
 site_name = "runcard"
 site_description = "Hydra configuration and structured logging for HPC experiments"
-site_url = "https://adanoelle.github.io/runcard/"
-repo_url = "https://github.com/adanoelle/runcard"
-repo_name = "adanoelle/runcard"
+site_url = "https://doe-nci-mossaic.github.io/runcard/"
+repo_url = "https://github.com/DOE-NCI-MOSSAIC/runcard"
+repo_name = "DOE-NCI-MOSSAIC/runcard"
 copyright = "runcard contributors"
 nav = [
   { "Home" = "index.md" },
