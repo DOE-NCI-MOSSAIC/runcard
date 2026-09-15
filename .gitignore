@@ -11,12 +11,6 @@ __pycache__/
 dist/
 build/
 
-# Rust
-target/
-
-# Apptainer
-*.sif
-
 # Run output (SLURM logs + Hydra output)
 runs/
 

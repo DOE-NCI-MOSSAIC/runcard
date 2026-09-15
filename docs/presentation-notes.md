@@ -322,7 +322,7 @@ Inside a job, the `slurm` startup line becomes:
 and every JSON line carries `slurm_job_id`, `slurm_nodelist`, and `hostname`. If
 you `srun` many ranks into one log, you can still tell them apart.
 
-Minimal batch script, modelled on `jobs/hello.sbatch`:
+Minimal batch script (a fuller smoke-test version lives in the ornlkit-frontier repository):
 
 ```bash
 #!/bin/bash
@@ -347,7 +347,7 @@ Two conventions worth copying:
 - **Pass `"$@"` through.** Then `sbatch job.sbatch model.lr=0.01` works, and the
   override is recorded in `.hydra/overrides.yaml`.
 
-Setup is covered in `docs/frontier-setup.md`. The short version: `just sync`
+Setup is covered in the ornlkit-frontier repository. The short version: its `sync` recipe
 builds `.venv-frontier/` once on a login node, and compute nodes use it directly
 with no `uv` involved.
 

@@ -1,7 +1,7 @@
 [project]
 name = "ornlkit"
 version = "0.1.0"
-description = "Data engineering toolkit for ORNL"
+description = "Hydra configuration and structured logging for ORNL HPC experiments"
 requires-python = ">=3.10"
 dependencies = [
     # DataFrames & columnar data (Rust-backed)
