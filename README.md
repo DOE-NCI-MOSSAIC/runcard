@@ -1,5 +1,7 @@
 # runcard
 
+[![CI](https://github.com/DOE-NCI-MOSSAIC/runcard/actions/workflows/ci.yml/badge.svg)](https://github.com/DOE-NCI-MOSSAIC/runcard/actions/workflows/ci.yml)
+
 Hydra configuration and structured logging for research experiments on ORNL
 systems. A *run card*, in the event-generator sense, is the one file that
 fully specifies a run. runcard makes your `conf/config.yaml` that file: every
