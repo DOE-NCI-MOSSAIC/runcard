@@ -1,6 +1,6 @@
-# ornlkit for your experiments — presentation notes
+# runcard for your experiments — presentation notes
 
-Speaker notes for introducing ornlkit to researchers who have not used Hydra or
+Speaker notes for introducing runcard to researchers who have not used Hydra or
 Python logging before. Each `##` section is one slide or one live demo step.
 Text in _Say:_ blocks is the talking point; code blocks are what to show.
 Everything here was run against the current `main` and reflects real output.
@@ -32,7 +32,7 @@ Three things go wrong:
   versions. When a job behaves differently on Frontier than on your laptop, you
   have no evidence.
 
-ornlkit fixes all three with one decorator. You do not need to learn Hydra or
+runcard fixes all three with one decorator. You do not need to learn Hydra or
 structlog to benefit. You need to learn about six things, and they are on the
 next slides.
 
@@ -43,15 +43,17 @@ next slides.
 _Say:_ This is the complete surface area a researcher touches.
 
 ```python
-from ornlkit._logging import get_logger
-from ornlkit.experiment import ornlkit_main
+from runcard import get_logger
+from runcard import experiment
 
 log = get_logger(__name__)
 
-@ornlkit_main(config_path="conf", config_name="config")
+
+@experiment("conf/config.yaml")
 def main(cfg):
     log.info("start", lr=cfg.model.lr)
     ...
+
 
 if __name__ == "__main__":
     main()
@@ -240,7 +242,7 @@ except Exception:
 ```python
 log = get_logger(__name__)
 run_log = log.bind(trial=trial_id, seed=seed)
-run_log.info("start")          # trial=... seed=... appear automatically
+run_log.info("start")  # trial=... seed=... appear automatically
 run_log.info("epoch_done", epoch=0)
 ```
 
@@ -262,11 +264,11 @@ file and has no timestamp. Use it for nothing you will want later.
 
 ## 6. Live demo: reading logs afterwards (4 min)
 
-_Say:_ The JSON file is for machines. `ornlkit logs` is for you.
+_Say:_ The JSON file is for machines. `runcard logs` is for you.
 
 ```bash
-ornlkit logs list                       # every run under outputs/ and runs/
-ornlkit logs list --roots multirun      # sweeps live under multirun/
+runcard logs list                       # every run under outputs/ and runs/
+runcard logs list --roots multirun      # sweeps live under multirun/
 ```
 
 ```
@@ -278,10 +280,10 @@ Each run is listed with the overrides that produced it. That is usually enough
 to find the one you want.
 
 ```bash
-ornlkit logs show outputs/2026-09-13/20-51-42
-ornlkit logs show outputs/2026-09-13/20-51-42 --event epoch_done
-ornlkit logs show outputs/2026-09-13/20-51-42 --level error
-ornlkit logs tail outputs/2026-09-13/20-51-42 -n 5
+runcard logs show outputs/2026-09-13/20-51-42
+runcard logs show outputs/2026-09-13/20-51-42 --event epoch_done
+runcard logs show outputs/2026-09-13/20-51-42 --level error
+runcard logs tail outputs/2026-09-13/20-51-42 -n 5
 ```
 
 Output is the same readable format as the console, with the run context printed
@@ -300,6 +302,7 @@ into Polars:
 
 ```python
 import polars as pl
+
 df = pl.read_ndjson("outputs/2026-09-13/20-51-42/train.log")
 df.filter(pl.col("event") == "epoch_done").select("epoch", "loss")
 ```
@@ -322,7 +325,7 @@ Inside a job, the `slurm` startup line becomes:
 and every JSON line carries `slurm_job_id`, `slurm_nodelist`, and `hostname`. If
 you `srun` many ranks into one log, you can still tell them apart.
 
-Minimal batch script, modelled on `jobs/hello.sbatch`:
+Minimal batch script (a fuller smoke-test version lives in the runcard-frontier repository):
 
 ```bash
 #!/bin/bash
@@ -343,11 +346,11 @@ mkdir -p "$run_dir"
 Two conventions worth copying:
 
 - **One tree per experiment.** SLURM stdout at `runs/myexp/<jobid>.log`, Hydra
-  output at `runs/myexp/<jobid>/`. `ornlkit logs list` finds the latter.
+  output at `runs/myexp/<jobid>/`. `runcard logs list` finds the latter.
 - **Pass `"$@"` through.** Then `sbatch job.sbatch model.lr=0.01` works, and the
   override is recorded in `.hydra/overrides.yaml`.
 
-Setup is covered in `docs/frontier-setup.md`. The short version: `just sync`
+Setup is covered in the runcard-frontier repository. The short version: its `sync` recipe
 builds `.venv-frontier/` once on a login node, and compute nodes use it directly
 with no `uv` involved.
 
@@ -368,7 +371,7 @@ with no `uv` involved.
 - **Do not log huge things.** An array or DataFrame passed as a field is
   serialised in full into the JSON file on every call.
 - **`multirun/` is not searched by default.** Use
-  `ornlkit logs list --roots multirun`, or set `hydra.sweep.dir` to put sweeps
+  `runcard logs list --roots multirun`, or set `hydra.sweep.dir` to put sweeps
   under `runs/`.
 - **Config keys are strict.** `model.lr` must exist in the YAML to be
   overridden. Use `+model.lr` to add one. This trips everyone exactly once.
@@ -382,9 +385,9 @@ _Say:_ Three steps to try this on your own script this week.
 1. Copy the `train.py` and `conf/config.yaml` skeleton from slide 2. Move your
    hard-coded constants into the YAML.
 2. Replace every `print` with `log.info("what_happened", key=value)`.
-3. Run it twice with different overrides, then run `ornlkit logs list`.
+3. Run it twice with different overrides, then run `runcard logs list`.
 
-If those three steps take more than an hour, that is a bug in ornlkit. Tell me.
+If those three steps take more than an hour, that is a bug in runcard. Tell me.
 
 ---
 

@@ -10,7 +10,7 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, Field
 
-from ornlkit._logging import get_logger
+from runcard._logging import get_logger
 
 log = get_logger()
 
@@ -26,6 +26,16 @@ _SLURM_VARS = (
 
 
 class SlurmInfo(BaseModel):
+    """SLURM job variables, ``None`` when running outside a job.
+
+    Attributes:
+        job_id: ``SLURM_JOB_ID``.
+        nodelist: ``SLURM_NODELIST``, e.g. ``frontier[01234-01235]``.
+        nnodes: ``SLURM_NNODES``.
+        ntasks: ``SLURM_NTASKS``.
+        cluster_name: ``SLURM_CLUSTER_NAME``.
+    """
+
     job_id: str | None = None
     nodelist: str | None = None
     nnodes: str | None = None
@@ -34,6 +44,22 @@ class SlurmInfo(BaseModel):
 
 
 class DiagnosticsReport(BaseModel):
+    """Snapshot of the environment a run started in.
+
+    Attributes:
+        hostname: Node the process is running on.
+        platform: ``platform.platform()`` string.
+        python_version: Interpreter version, e.g. ``3.12.13``.
+        python_path: Path to the interpreter, which shows which venv is active.
+        cwd: Working directory at startup.
+        user: ``$USER``, or ``"unknown"``.
+        slurm: SLURM job variables.
+        uv_path: Location of ``uv`` if on ``PATH``.
+        packages: Installed version per requested distribution, or
+            ``"NOT FOUND"``.
+        elapsed_seconds: Time taken to collect the report.
+    """
+
     hostname: str
     platform: str
     python_version: str
@@ -57,7 +83,14 @@ def _get_package_version(name: str) -> str:
 def collect_diagnostics(
     core_packages: Sequence[str] = _CORE_PACKAGES,
 ) -> DiagnosticsReport:
-    """Collect environment diagnostics and return a structured report."""
+    """Collect environment diagnostics without logging them.
+
+    Args:
+        core_packages: Distribution names to look up versions for.
+
+    Returns:
+        A ``DiagnosticsReport``; nothing is logged.
+    """
     t0 = time.monotonic()
 
     slurm = SlurmInfo(
@@ -91,8 +124,14 @@ def log_diagnostics(
 ) -> DiagnosticsReport:
     """Log environment information useful for verifying compute jobs.
 
-    Emits three flat events -- ``environment``, ``slurm`` and ``packages`` --
-    so each fits on a console line.  The structured report is returned.
+    Emits three flat events, ``environment``, ``slurm`` and ``packages``, so
+    each fits on one console line. ``@experiment`` calls this at startup.
+
+    Args:
+        core_packages: Distribution names to look up versions for.
+
+    Returns:
+        The ``DiagnosticsReport`` that was logged.
     """
     report = collect_diagnostics(core_packages=core_packages)
 

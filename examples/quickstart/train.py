@@ -2,7 +2,7 @@
 
 The task is deliberately trivial. What matters is the shape of the script:
 
-* ``@ornlkit_main`` turns ``conf/config.yaml`` into ``cfg`` and sets up
+* ``@experiment`` turns ``conf/config.yaml`` into ``cfg`` and sets up
   logging and a per-run output directory.
 * ``log.info("event_name", key=value)`` replaces ``print``.
 
@@ -19,8 +19,7 @@ import time
 import polars as pl
 from omegaconf import DictConfig
 
-from ornlkit._logging import get_logger
-from ornlkit.experiment import ornlkit_main
+from runcard import experiment, get_logger
 
 log = get_logger("train")
 
@@ -42,7 +41,7 @@ def gradient(df: pl.DataFrame, slope: float) -> float:
     return df.select((2 * (slope * pl.col("x") - pl.col("y")) * pl.col("x")).mean()).item()
 
 
-@ornlkit_main(config_path="conf", config_name="config")
+@experiment("conf/config.yaml")
 def main(cfg: DictConfig) -> None:
     log.info(
         "start",

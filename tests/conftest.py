@@ -3,7 +3,7 @@
 import pytest
 import structlog
 
-from ornlkit._logging import configure_structlog
+from runcard._logging import configure_structlog
 
 
 @pytest.fixture(autouse=True)

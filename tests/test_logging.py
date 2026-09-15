@@ -4,7 +4,7 @@ import structlog
 from structlog.contextvars import bind_contextvars, clear_contextvars
 from structlog.testing import capture_logs
 
-from ornlkit._logging import (
+from runcard._logging import (
     add_local_timestamp,
     get_logger,
     merge_run_context,

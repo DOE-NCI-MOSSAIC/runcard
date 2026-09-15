@@ -1,8 +1,6 @@
-# Quickstart example
+# Tutorial: the quickstart
 
-A tiny experiment that fits a line to noisy data with gradient descent. The
-science is deliberately trivial; the point is the shape of the script and
-what you get for free from `@experiment`.
+The quickstart lives in `examples/quickstart/` in the repository. It fits a line to noisy data with gradient descent. The science is deliberately trivial; the point is the shape of the script and what you get for free from `@experiment`.
 
 ```
 examples/quickstart/
@@ -14,7 +12,7 @@ examples/quickstart/
 Run it from the repository root. Output lands in `outputs/<date>/<time>/`
 under the current directory.
 
-## Demo sequence
+## Ten steps
 
 Each step introduces one idea. Run them in order.
 

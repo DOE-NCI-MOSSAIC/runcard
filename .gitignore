@@ -11,12 +11,6 @@ __pycache__/
 dist/
 build/
 
-# Rust
-target/
-
-# Apptainer
-*.sif
-
 # Run output (SLURM logs + Hydra output)
 runs/
 
@@ -24,6 +18,10 @@ runs/
 logs/
 outputs/
 multirun/
+
+# Docs build
+site/
+.cache/
 
 # Editor
 .direnv/

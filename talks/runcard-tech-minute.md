@@ -1,12 +1,12 @@
 ---
-title: ornlkit
+title: runcard
 sub_title: support infrastructure for experiments
 author: Ada Young
 event: tech minute
 date: 2026-09-14
 ---
 
-<!-- speaker_note: Run from the repo root with present talks/ornlkit-tech-minute.md. Ctrl+E runs the live blocks in the real terminal, any key returns to the slide. Before the talk, rm -rf outputs multirun. -->
+<!-- speaker_note: Run from the repo root with present talks/runcard-tech-minute.md. Ctrl+E runs the live blocks in the real terminal, any key returns to the slide. Before the talk, rm -rf outputs multirun. -->
 
 How most experiment scripts look
 ===
@@ -36,13 +36,13 @@ which run had lr=0.01? which node did it crash on?
 <!-- pause -->
 - every run writes to the same place, so <span class="hl">run two overwrites run one</span>
 
-ornlkit: Experiment Tracking and Logging
+runcard: Experiment Tracking and Logging
 ===
 
 # Two main objectives:
 
 <!-- pause -->
-- Sets up experiment configuration using yaml (Meta's Hydra)
+- Sets up experiment configuration & tracking (Meta's Hydra)
 <!-- pause -->
 - Sets up structured logging (structlog)
 
@@ -58,16 +58,17 @@ The Entire API
 <!-- column: 0 -->
 
 ```python {1-2|4|6-8|9}
-from ornlkit._logging import get_logger
-from ornlkit.experiment import ornlkit_main
+from runcard import get_logger
+from runcard import experiment
 
 log = get_logger("train")
 
-@ornlkit_main(config_path="conf",
-              config_name="config")
+
+@experiment("conf/config.yaml")
 def main(cfg):
     log.info("start", lr=cfg.model.lr)
     ...
+
 
 if __name__ == "__main__":
     main()
@@ -159,10 +160,7 @@ outputs/2026-09-13/21-15-47/
 Change parameters without editing code
 ===
 
-Let's say you want to quickly run with an updated parameter in your config,
-where your experiment yaml config has a model field, and you want to
-override the `lr` and the number of `epochs`.
-
+What if you wanted to run a quick experiment without needing to update some configuration file?
 <!-- pause -->
 
 ```bash +exec +acquire_terminal
@@ -214,7 +212,7 @@ log.warning("loss_increased", epoch=epoch, lr=cfg.model.lr)
 try:
     result = step(batch)
 except Exception:
-    log.exception("failed_step", step=i)   # traceback goes to the file
+    log.exception("failed_step", step=i)  # traceback goes to the file
     raise
 ```
 
@@ -225,7 +223,7 @@ Find and read runs afterwards
 
 ```bash +exec +acquire_terminal
 /// cd "$(git rev-parse --show-toplevel)"
-uv run ornlkit logs list
+uv run runcard logs list
 /// read -rsn1 -p $'\n[any key returns to the slides]'
 ```
 
@@ -240,7 +238,7 @@ multirun/2026-09-13/21-15-48/0  (1 log file(s)) - model.lr=0.1
 ## Show where in the log that `--event` is `epoch_done`
 
 ```bash
-ornlkit logs show outputs/2026-09-13/21-15-47 --event epoch_done
+runcard logs show outputs/2026-09-13/21-15-47 --event epoch_done
 ```
 
 <!-- pause -->
@@ -250,7 +248,7 @@ ornlkit logs show outputs/2026-09-13/21-15-47 --event epoch_done
 <!-- pause -->
 
 ```bash
-ornlkit logs show outputs/2026-09-13/21-15-47 --level error
+runcard logs show outputs/2026-09-13/21-15-47 --level error
 ```
 
 <!-- pause -->
@@ -260,7 +258,7 @@ ornlkit logs show outputs/2026-09-13/21-15-47 --level error
 <!-- pause -->
 
 ```bash
-ornlkit logs tail outputs/2026-09-13/21-15-47 -n 5
+runcard logs tail outputs/2026-09-13/21-15-47 -n 5
 ```
 <!-- pause -->
 
@@ -313,6 +311,6 @@ Try it on your script
 1. Copy `examples/quickstart/` next to your code.
    Move your constants into `conf/config.yaml`.
 2. Replace every `print` with `log.info("what_happened", key=value)`.
-3. Run it twice with different overrides, then `ornlkit logs list`.
+3. Run it twice with different overrides, then `runcard logs list`.
 
-<span class="dim">Repo: ornlkit. Longer notes: ornlkit/docs/presentation-notes.md</span>
+<span class="dim">Repo: runcard. Longer notes: runcard/docs/presentation-notes.md</span>

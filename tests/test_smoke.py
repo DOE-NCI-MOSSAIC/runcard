@@ -1,10 +1,10 @@
 """Smoke tests to verify the environment is working."""
 
-import ornlkit
+import runcard
 
 
 def test_version() -> None:
-    assert ornlkit.__version__ == "0.1.0"
+    assert runcard.__version__ == "0.1.0"
 
 
 def test_polars_available() -> None:
