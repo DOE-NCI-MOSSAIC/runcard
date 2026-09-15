@@ -32,6 +32,11 @@ _SLURM_VARS = (
 #: them from human-readable output, where the marker below is unavailable.
 RUN_CONTEXT_KEYS = frozenset(v.lower() for v in _SLURM_VARS) | {"hostname"}
 
+#: Event names emitted by runcard itself rather than by the researcher's code.
+#: ``run_finished`` and ``run_failed`` bracket every run; the other three are
+#: the startup diagnostics.
+RUNCARD_EVENTS = frozenset({"environment", "slurm", "packages", "run_finished", "run_failed"})
+
 # Event-dict key holding the names of fields merged in from contextvars.
 _RUN_CONTEXT_MARKER = "_run_context"
 
@@ -281,6 +286,7 @@ def get_logger(name: str | None = None, **initial_values: Any) -> structlog.stdl
 configure_structlog()
 
 __all__ = [
+    "RUNCARD_EVENTS",
     "RUN_CONTEXT_KEYS",
     "add_local_timestamp",
     "bind_slurm_context",

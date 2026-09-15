@@ -131,6 +131,36 @@ class TestExperimentDecorator:
         assert "exc_info" not in event
 
     @pytest.mark.usefixtures("_patch_argparse")
+    def test_run_finished_event_written(self, tmp_path, monkeypatch) -> None:
+        @experiment(f"{_CONF_DIR}/config.yaml", core_packages=())
+        def run(cfg):
+            return 42
+
+        monkeypatch.setattr("sys.argv", ["run", f"hydra.run.dir={tmp_path}"])
+        run()  # hydra.main does not propagate the return value
+        (log_file,) = tmp_path.glob("*.log")
+        events = [json.loads(ln) for ln in log_file.read_text().splitlines()]
+        assert events[-1]["event"] == "run_finished"
+        assert isinstance(events[-1]["elapsed_s"], float)
+
+    @pytest.mark.usefixtures("_patch_argparse")
+    def test_run_failed_event_written_and_reraised(self, tmp_path, monkeypatch) -> None:
+        @experiment(f"{_CONF_DIR}/config.yaml", core_packages=())
+        def run(cfg):
+            raise RuntimeError("simulated crash")
+
+        monkeypatch.setattr("sys.argv", ["run", f"hydra.run.dir={tmp_path}"])
+        # Without HYDRA_FULL_ERROR Hydra prints the error and calls sys.exit(1).
+        monkeypatch.setenv("HYDRA_FULL_ERROR", "1")
+        with pytest.raises(RuntimeError, match="simulated crash"):
+            run()
+        (log_file,) = tmp_path.glob("*.log")
+        events = [json.loads(ln) for ln in log_file.read_text().splitlines()]
+        assert events[-1]["event"] == "run_failed"
+        assert events[-1]["level"] == "error"
+        assert "RuntimeError: simulated crash" in events[-1]["exception"]
+
+    @pytest.mark.usefixtures("_patch_argparse")
     def test_cli_override(self, capsys, monkeypatch) -> None:
         """Verify that Hydra CLI overrides work through the decorator."""
         captured = []

@@ -13,6 +13,7 @@ import os
 import platform as _platform
 import re
 import sys
+import time
 from collections.abc import Callable, Sequence
 from typing import Any
 
@@ -20,8 +21,10 @@ import hydra
 import structlog.contextvars
 from omegaconf import DictConfig
 
-from runcard._logging import bind_slurm_context, configure_handlers
+from runcard._logging import bind_slurm_context, configure_handlers, get_logger
 from runcard.diagnostics import _CORE_PACKAGES, log_diagnostics
+
+log = get_logger()
 
 # Hydra 1.3 passes a LazyCompletionHelp object (which doesn't implement
 # __contains__) as the ``help`` argument to argparse.  Python 3.14 added
@@ -34,6 +37,10 @@ if sys.version_info >= (3, 14) and hasattr(argparse.ArgumentParser, "_check_help
 DEFAULT_CONFIG = "conf/config.yaml"
 
 _YAML_SUFFIX = re.compile(r"\.ya?ml$")
+
+
+def _elapsed(t0: float) -> float:
+    return round(time.perf_counter() - t0, 3)
 
 
 def _split_config(config: str) -> tuple[str, str]:
@@ -72,6 +79,13 @@ def experiment(
     its own output directory holding the exact config, the overrides, and a
     JSON event log, and starts by logging the host, Python, package versions,
     and SLURM job.
+
+    Every run is bracketed by runcard's own events so ``runcard logs`` can
+    tell how it ended without relying on what the script logged: a
+    ``run_finished`` event with ``elapsed_s`` when the function returns, or a
+    ``run_failed`` event carrying the traceback when it raises (the exception
+    is re-raised). A run whose log has neither was interrupted or is still
+    running.
 
     ``config`` is resolved relative to the file that defines the decorated
     function, so a script behaves the same wherever it is run from.
@@ -136,7 +150,17 @@ def experiment(
             bind_slurm_context()
             structlog.contextvars.bind_contextvars(hostname=_platform.node())
             log_diagnostics(core_packages=core_packages)
-            return func(cfg)
+            t0 = time.perf_counter()
+            try:
+                result = func(cfg)
+            except KeyboardInterrupt:
+                log.warning("run_failed", elapsed_s=_elapsed(t0), reason="interrupted")
+                raise
+            except Exception:
+                log.exception("run_failed", elapsed_s=_elapsed(t0))
+                raise
+            log.info("run_finished", elapsed_s=_elapsed(t0))
+            return result
 
         return wrapper
 

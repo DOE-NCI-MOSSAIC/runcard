@@ -41,6 +41,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv]
+# Keep the docs toolchain installed alongside dev tools so `just docs` works after `uv sync`.
+default-groups = ["dev", "docs"]
 # On OLCF systems, set this to inherit ROCm/MPI packages from the system conda env.
 # Uncomment when working on Frontier:
 # python-preference = "only-system"

@@ -11,12 +11,17 @@ runcard logs list --roots multirun      # sweeps live under multirun/
 ```
 
 ```
-outputs/2026-09-13/20-51-42  (1 log file(s)) - model.lr=0.01
-outputs/2026-09-13/20-51-44  (1 log file(s)) - +model.dropout=0.1
+Run                          Status     Duration  Overrides
+outputs/2026-09-13/20-51-42  finished       3.2s  model.lr=0.01
+outputs/2026-09-13/20-51-44  failed         0.4s  +model.dropout=0.1
 ```
 
-Each run is listed with the overrides that produced it. That is usually
-enough to find the one you want.
+Each run is listed with how it ended and the overrides that produced it.
+That is usually enough to find the one you want. For one run at a glance:
+
+```bash
+runcard logs summary outputs/2026-09-13/20-51-42
+```
 
 ## Read one run
 

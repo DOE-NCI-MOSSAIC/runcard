@@ -70,10 +70,11 @@ uv run runcard logs list
 uv run runcard logs list --roots multirun
 ```
 
-**9. Read one run back.** Same format as the console. Filter by event or
-level.
+**9. Read one run back.** A one-screen summary first, then the events in
+the same format as the console, filtered by event or level.
 
 ```bash
+uv run runcard logs summary outputs/<date>/<time>
 uv run runcard logs show outputs/<date>/<time>
 uv run runcard logs show outputs/<date>/<time> --event epoch_done
 uv run runcard logs show outputs/<date>/<time> --level error

@@ -67,6 +67,15 @@ every JSON line, where a script reading many runs at once needs them.
 `print` still works and still shows on the console, but it is not in the JSON
 file and has no timestamp. Use it for nothing you will want later.
 
+## Events runcard writes for you
+
+Five event names belong to runcard, not to your script. Three open every
+run: `environment`, `slurm`, and `packages`. Two close it: `run_finished`,
+with the elapsed time, when your function returns, and `run_failed`, with
+the traceback, when it raises. Because the decorator writes these, `runcard
+logs list` and `runcard logs summary` can tell finished from failed from
+killed without any convention on your side. Avoid reusing those five names.
+
 ## Pitfalls
 
 **Timestamps are local time with an offset**
