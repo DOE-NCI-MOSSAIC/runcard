@@ -4,9 +4,11 @@ sub_title: support infrastructure for experiments
 author: Ada Young
 event: tech minute
 date: 2026-09-14
+theme:
+  name: graphite
 ---
 
-<!-- speaker_note: Run from the repo root with present talks/runcard-tech-minute.md. Ctrl+E runs the live blocks in the real terminal, any key returns to the slide. Before the talk, rm -rf outputs multirun, and run uv sync so runcard is current. The live blocks create four runs in order (default, lr=0.9, one that logs an error, one that crashes) and the later slides pick the first and the last of those automatically. -->
+<!-- speaker_note: Run from the repo root with present --theme graphite talks/runcard-tech-minute.md (the flag also switches the terminal font and code palette; the front matter alone only covers presenterm's own colours). Ctrl+E runs the live blocks in the real terminal, any key returns to the slide. Before the talk, rm -rf outputs multirun, and run uv sync so runcard is current. The live blocks create four runs in order (default, lr=0.9, one that logs an error, one that crashes) and the later slides pick the first and the last of those automatically. -->
 
 How most experiment scripts look
 ===
