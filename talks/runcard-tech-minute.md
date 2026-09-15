@@ -6,7 +6,7 @@ event: tech minute
 date: 2026-09-14
 ---
 
-<!-- speaker_note: Run from the repo root with present talks/runcard-tech-minute.md. Ctrl+E runs the live blocks in the real terminal, any key returns to the slide. Before the talk, rm -rf outputs multirun. -->
+<!-- speaker_note: Run from the repo root with present talks/runcard-tech-minute.md. Ctrl+E runs the live blocks in the real terminal, any key returns to the slide. Before the talk, rm -rf outputs multirun, and run uv sync so runcard is current. The live blocks create four runs in order (default, lr=0.9, one that logs an error, one that crashes) and the later slides pick the first and the last of those automatically. -->
 
 How most experiment scripts look
 ===
@@ -45,6 +45,8 @@ runcard: Experiment Tracking and Logging
 - Sets up experiment configuration & tracking (Meta's Hydra)
 <!-- pause -->
 - Sets up structured logging (structlog)
+<!-- pause -->
+- Answers "which runs, how did they end, what happened" from the shell
 
 <!-- pause -->
 
@@ -118,6 +120,7 @@ uv run python examples/quickstart/train.py
 21:15:47 [info   ] start        [train] epochs=5 lr=0.5 n_rows=10000 seed=0
 21:15:47 [info   ] epoch_done   [train] epoch=0 loss=1.0241 slope=0.8328
 21:15:47 [info   ] epoch_done   [train] epoch=1 loss=0.5065 slope=1.3898
+21:15:47 [info   ] run_finished elapsed_s=0.012
 ```
 
 <!-- pause -->
@@ -125,6 +128,8 @@ uv run python examples/quickstart/train.py
 - first three lines are automatic: <span class="hl">where it ran, which Python, which packages</span>
 <!-- pause -->
 - then `time` `level` `event` `logger` and sorted `key=value` data
+<!-- pause -->
+- the last line is automatic too: <span class="hl">returned, or raised, and how long it took</span>
 
 What is saved to disk
 ===
@@ -217,7 +222,34 @@ except Exception:
 
 <span class="dim">Levels: debug (hidden by default), info, warning, exception.</span>
 
-Find and read runs afterwards
+How a run ends is recorded too
+===
+
+A script that logs an error and carries on:
+
+```bash +exec +acquire_terminal
+/// cd "$(git rev-parse --show-toplevel)"
+uv run python examples/quickstart/train.py demo.fail_at_epoch=1
+/// read -rsn1 -p $'\n[any key returns to the slides]'
+```
+
+<!-- pause -->
+
+A script that crashes (no rows, so the mean is `None`):
+
+```bash +exec +acquire_terminal
+/// cd "$(git rev-parse --show-toplevel)"
+uv run python examples/quickstart/train.py data.n_rows=0
+/// read -rsn1 -p $'\n[any key returns to the slides]'
+```
+
+<!-- pause -->
+
+- the decorator writes `run_finished` or `run_failed` (with the traceback)
+<!-- pause -->
+- so <span class="hl">a crash, a killed job, and a running job no longer look the same</span>
+
+Find runs afterwards
 ===
 
 ```bash +exec +acquire_terminal
@@ -228,60 +260,62 @@ uv run runcard logs list
 
 ```text
 Run                          Status             Duration  Overrides
-outputs/2026-09-13/21-15-47  finished               0.1s  model.lr=4.0
-outputs/2026-09-13/21-15-48  finished, 1 error      0.1s  demo.fail_at_epoch=1
-outputs/2026-09-13/21-15-49  failed                 0.0s  data.n_rows=0
+outputs/2026-09-13/21-15-47  finished               0.1s
+outputs/2026-09-13/21-15-48  finished               0.1s  model.lr=0.9
+outputs/2026-09-13/21-15-49  finished, 1 error      0.1s  demo.fail_at_epoch=1
+outputs/2026-09-13/21-15-50  failed                 0.0s  data.n_rows=0
 ```
 
-<span class="dim">Status comes from events the decorator writes, not from your script.</span>
+<span class="dim">Status comes from the events the decorator writes, not from your script.</span>
 
 <!-- pause -->
 
-## One screen for a run: how it ended, where, and how the numbers moved
+## One screen for a run: how it ended, where, how the numbers moved
 
-```bash
-runcard logs summary outputs/2026-09-13/21-15-47
+```bash +exec +acquire_terminal
+/// cd "$(git rev-parse --show-toplevel)"
+/// last=$(uv run runcard logs list | grep '^outputs' | tail -1 | cut -f1)
+uv run runcard logs summary "$last"    # the run that crashed
+/// read -rsn1 -p $'\n[any key returns to the slides]'
 ```
 
-<!-- pause -->
+Read one run
+===
 
-## Show where in the log that `--event` is `epoch_done`
-
-```bash
-runcard logs show outputs/2026-09-13/21-15-47 --event epoch_done
-```
-
-<!-- pause -->
-
-## Show where in the logs there are errors
-
-<!-- pause -->
-
-```bash
-runcard logs show outputs/2026-09-13/21-15-47 --level error
+```bash +exec +acquire_terminal
+/// cd "$(git rev-parse --show-toplevel)"
+/// first=$(uv run runcard logs list | grep '^outputs' | head -1 | cut -f1)
+uv run runcard logs show "$first" --event epoch_done
+/// read -rsn1 -p $'\n[any key returns to the slides]'
 ```
 
 <!-- pause -->
 
-## Show the last five lines in the log
+```bash +exec +acquire_terminal
+/// cd "$(git rev-parse --show-toplevel)"
+/// last=$(uv run runcard logs list | grep '^outputs' | tail -1 | cut -f1)
+uv run runcard logs show "$last" --level error
+/// read -rsn1 -p $'\n[any key returns to the slides]'
+```
 
 <!-- pause -->
 
-```bash
-runcard logs tail outputs/2026-09-13/21-15-47 -n 5
-```
+| Want to                          | Type                          |
+| -------------------------------- | ----------------------------- |
+| the last five events             | `runcard logs tail RUN -n 5`  |
+| JSON for `jq`                    | `runcard logs show RUN -c`    |
+| tab-complete runs and events     | `runcard --install-completion`|
+
 <!-- pause -->
 
 # Or skip the CLI and read the file with Polars:
 
 ```python
-df = pl.read_ndjson("outputs/2026-09-13/21-15-47/train.log")
+df = pl.read_ndjson("outputs/<date>/<time>/train.log")
 df.filter(pl.col("event") == "epoch_done").select("epoch", "loss")
 ```
 
-<!-- pause -->
-
-<span class="hl">Loss curves across a sweep are a one-liner, even if not explicitly saved .</span>
+<span class="hl">Loss curves across a sweep are a one-liner.</span>
 
 On Frontier nothing changes
 ===
@@ -308,12 +342,13 @@ module load miniforge3/23.11.0-0
 
 run_dir="runs/myexp/${SLURM_JOB_ID}"
 
-uv run python train.py \
+.venv-frontier/bin/python3 train.py \
     hydra.run.dir="$run_dir" "$@"
 ```
 
 - one tree per experiment: `runs/myexp/<jobid>.log` and `runs/myexp/<jobid>/`
 - pass `"$@"` through, so `sbatch job.sbatch model.lr=0.01` just works
+- `runcard logs list` asks SLURM whether an unfinished run is still going
 
 Try it on your script
 ===
@@ -321,6 +356,7 @@ Try it on your script
 1. Copy `examples/quickstart/` next to your code.
    Move your constants into `conf/config.yaml`.
 2. Replace every `print` with `log.info("what_happened", key=value)`.
-3. Run it twice with different overrides, then `runcard logs list`.
+3. Run it twice with different overrides, then `runcard logs list`
+   and `runcard logs summary <run>`.
 
 <span class="dim">Repo: runcard. Longer notes: runcard/docs/presentation-notes.md</span>
